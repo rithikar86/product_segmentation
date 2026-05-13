@@ -85,8 +85,8 @@ export function SegmentPieChart({
           dataKey="count"
           nameKey="name"
         >
-          {pieData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.color} />
+          {pieData.map((entry) => (
+            <Cell key={entry.name} fill={entry.color} />
           ))}
         </Pie>
         <Tooltip
@@ -121,7 +121,7 @@ export function InventoryAlertWidget({ data }: { data?: any[] }) {
       subtitle={`${criticalItems.length} critical, ${warningItems.length} warning`}
     >
       <div className="space-y-3">
-        {inventory.slice(0, 4).map((item, index) => {
+        {inventory.slice(0, 4).map((item) => {
           const status = (item['In Process'] || 0) > (item['Delivered'] || 0) ? "critical" : (item['In Process'] || 0) > 0 ? "warning" : "stable"
           const statusColor =
             status === "critical"
@@ -138,7 +138,7 @@ export function InventoryAlertWidget({ data }: { data?: any[] }) {
 
           return (
             <div
-              key={index}
+              key={item.product || item.name || item.id}
               className={`flex items-center justify-between rounded-lg border p-3 ${statusColor}`}
             >
               <div className="flex-1">

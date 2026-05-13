@@ -40,28 +40,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push("/signin")
   }, [router])
 
+  // Initialize auth from localStorage on mount only
   useEffect(() => {
     const storedToken = localStorage.getItem("accessToken") || localStorage.getItem("token")
     const storedShopId = localStorage.getItem("shopId") || localStorage.getItem("shop_id")
     const storedDetails = localStorage.getItem("user_details")
 
-    if (storedToken && storedShopId && storedDetails) {
-      try {
+    try {
+      if (storedToken && storedShopId && storedDetails) {
+        const parsedDetails = JSON.parse(storedDetails)
         setToken(storedToken)
         setUser({
           shopId: storedShopId,
-          ...JSON.parse(storedDetails)
+          ...parsedDetails
         })
-      } catch (e) {
-        console.error("Failed to parse stored user details", e)
-        logout()
       }
-    } else if (pathname !== "/signin" && pathname !== "/signup") {
-      // Redirect if not on an auth page and no credentials
+    } catch (e) {
+      console.error("Failed to parse stored user details:", e)
+      localStorage.removeItem('user_details')
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('shopId')
+      localStorage.removeItem('shop_id')
+      localStorage.removeItem('token')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  // Redirect to signin if not authenticated and not on auth page
+  useEffect(() => {
+    if (loading) return
+    
+    const isAuthPage = pathname === "/signin" || pathname === "/signup" || pathname?.startsWith("/auth")
+    const isAuthenticated = !!token
+    
+    if (!isAuthenticated && !isAuthPage && pathname) {
       router.push("/signin")
     }
-    setLoading(false)
-  }, [pathname, logout, router])
+  }, [token, pathname, loading, router])
 
   const login = (newToken: string, shopId: string, details: Partial<User>) => {
     localStorage.setItem("token", newToken)

@@ -1,5 +1,5 @@
 // This is the address of your Python Flask server
-export const API_BASE_URL = "/api";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
 async function handleJsonResponse(response: Response) {
   const text = await response.text();
@@ -53,9 +53,6 @@ function getAuthHeaders() {
   const accessToken = localStorage.getItem("accessToken");
   const token = localStorage.getItem("token");
   const finalToken = accessToken || token;
-  
-  console.log("Auth Debug - localStorage accessToken:", accessToken);
-  console.log("Auth Debug - localStorage token:", token);
   
   return finalToken ? { "Authorization": `Bearer ${finalToken}` } : {};
 }

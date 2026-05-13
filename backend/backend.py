@@ -31,14 +31,16 @@ from services.analysis import (
     validate_and_convert_csv,
     update_rfm_segments,
     RFMConfig,
-    build_segment_top_products
+    build_segment_top_products,
+    build_apriori_rules,
+    build_cooccurrence
 )
 
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001"]}}, supports_credentials=True)
+CORS(app, resources={r"/api/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001", "http://10.160.185.18:3001"]}}, supports_credentials=True)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 @app.before_request
@@ -51,7 +53,9 @@ app.config['REQUEST_TIMEOUT'] = 600  # 10 minutes timeout
 
 MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/voltstream_db')
 MONGO_DB_NAME = os.getenv('MONGO_DB_NAME', 'voltstream_db')
-JWT_SECRET = os.getenv('JWT_SECRET', 'change-this-secret')
+JWT_SECRET = os.getenv('JWT_SECRET')
+if not JWT_SECRET:
+    raise ValueError('JWT_SECRET environment variable must be set for security')
 JWT_ALGORITHM = 'HS256'
 
 # Print warnings if defaults were used
@@ -59,8 +63,6 @@ if os.getenv('MONGO_URI') is None:
     print('[WARNING] MONGO_URI not set, using default mongodb://localhost:27017/')
 if os.getenv('MONGO_DB_NAME') is None:
     print('[WARNING] MONGO_DB_NAME not set, using default voltstream_db')
-if os.getenv('JWT_SECRET') is None:
-    print('[WARNING] JWT_SECRET not set, using fallback secret. Set JWT_SECRET in environment for production.')
 
 # Initialize MongoDB connection with error handling
 try:
@@ -163,7 +165,8 @@ def _hash_password(password: str) -> str:
 def _check_password(password: str, hashed_password: str) -> bool:
     try:
         return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
-    except Exception:
+    except Exception as e:
+        print(f'[ERROR] Failed to check password: {str(e)}')
         return False
 
 
@@ -189,8 +192,8 @@ def _get_current_user() -> SimpleNamespace:
         user = SimpleNamespace(shopId=shop_id, claims={})
         try:
             request.user = user
-        except Exception:
-            pass
+        except Exception as e:
+            print(f'[ERROR] Failed to assign request.user: {str(e)}')
         g.user = user
         return user
 
@@ -201,8 +204,8 @@ def _get_current_user() -> SimpleNamespace:
     user = SimpleNamespace(shopId=shop_id, claims=payload)
     try:
         request.user = user
-    except Exception:
-        pass
+    except Exception as e:
+        print(f'[ERROR] Failed to assign request.user: {str(e)}')
     g.user = user
     return user
 
@@ -244,7 +247,8 @@ def _get_tenant_transactions(tenant_filter: Optional[dict] = None) -> pd.DataFra
             'OrderStatus': 1,
             'Location': 1
         }))
-    except Exception:
+    except Exception as e:
+        print(f'[ERROR] Failed to fetch transactions from MongoDB: {str(e)}')
         return pd.DataFrame()
 
     if not docs:
@@ -310,7 +314,8 @@ def _extract_transactions_from_customer_doc(customer: dict) -> list[dict]:
 def _extract_transactions_from_mongo_collection(tenant_filter: Optional[dict] = None) -> list:
     try:
         docs = list(transactions_collection.find(tenant_filter or {}))
-    except Exception:
+    except Exception as e:
+        print(f'[ERROR] Failed to extract transactions from MongoDB: {str(e)}')
         return []
     records = []
     for doc in docs:
@@ -377,9 +382,6 @@ def register():
             'location': location,
             'created_at': datetime.utcnow()
         }
-
-        # Verification: Print right before the insert_one
-        print(f"DEBUG: Data being sent to MongoDB: {new_user}")
 
         # The Save Command: Wrap in try-except
         try:
@@ -828,6 +830,7 @@ def upload_csv():
     if file.filename == '':
         return jsonify({'error': 'Uploaded file has no filename.'}), 400
 
+    try:
         start_time = time.time()
         shop_owner_id = _get_shop_owner_id()
         if not shop_owner_id:
@@ -1069,7 +1072,7 @@ def get_recommendations():
                 'message': 'Please Upload Data'
             }), 200
 
-        rules = _build_apriori_rules(transactions, min_support=2, top_n=10)
+        rules = build_apriori_rules(transactions, min_support=2, top_n=10)
 
         return jsonify({
             'success': True,
@@ -1085,6 +1088,10 @@ def get_recommendations():
 @app.route('/api/send-alerts', methods=['POST'])
 @token_required
 def send_alerts():
+    return jsonify({
+        'success': False,
+        'error': 'Notification alerts are disabled in this build.'
+    }), 410
 
 @app.route('/api/simulator/send-campaign', methods=['POST'])
 @token_required
@@ -1175,4 +1182,5 @@ if __name__ == '__main__':
     except Exception as e:
         print(f"Error checking collection: {str(e)}")
     
-    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=True)
+    debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(host='0.0.0.0', port=5000, debug=debug_mode, use_reloader=False)

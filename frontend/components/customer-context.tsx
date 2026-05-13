@@ -35,11 +35,7 @@ export function CustomersProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const [isDataUpdated, setIsDataUpdated] = useState(false)
 
-  const markDataUpdated = useCallback(() => {
-    setIsDataUpdated(true)
-  }, [])
-
-  const refreshCustomers = async () => {
+  const refreshCustomers = useCallback(async () => {
     if (!isAuthenticated) return;
     setLoading(true)
     try {
@@ -53,7 +49,11 @@ export function CustomersProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [isAuthenticated])
+
+  const markDataUpdated = useCallback(() => {
+    setIsDataUpdated(true)
+  }, [])
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -61,13 +61,13 @@ export function CustomersProvider({ children }: { children: ReactNode }) {
     } else if (!authLoading && !isAuthenticated) {
       setLoading(false)
     }
-  }, [isAuthenticated, authLoading])
+  }, [isAuthenticated, authLoading, refreshCustomers])
 
   useEffect(() => {
     if (isDataUpdated && !authLoading && isAuthenticated) {
       void refreshCustomers().then(() => setIsDataUpdated(false))
     }
-  }, [isDataUpdated, authLoading, isAuthenticated])
+  }, [isDataUpdated, authLoading, isAuthenticated, refreshCustomers])
 
   return (
     <CustomerContext.Provider value={{ customers, loading, error, refreshCustomers, isDataUpdated, markDataUpdated }}>
