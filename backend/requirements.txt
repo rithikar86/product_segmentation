@@ -1,0 +1,12 @@
+flask
+flask-cors
+pymongo
+pandas
+pyjwt
+sib-api-v3-sdk
+python-dotenv
+bcrypt
+python-telegram-bot
+numpy
+openpyxl
+pywhatkit

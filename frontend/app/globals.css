@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 10% 8%;
+    --foreground: 220 20% 85%;
+    --card: 240 10% 12%;
+    --card-foreground: 220 20% 85%;
+    --popover: 240 10% 12%;
+    --popover-foreground: 220 20% 85%;
+    --primary: 217 91% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 10% 18%;
+    --secondary-foreground: 220 20% 85%;
+    --muted: 240 10% 18%;
+    --muted-foreground: 220 15% 55%;
+    --accent: 45 96% 56%;
+    --accent-foreground: 240 10% 8%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 10% 20%;
+    --input: 240 10% 18%;
+    --ring: 217 91% 50%;
+    --radius: 0.75rem;
+    --chart-1: 217 91% 50%;
+    --chart-2: 45 96% 56%;
+    --chart-3: 217 70% 60%;
+    --chart-4: 45 80% 65%;
+    --chart-5: 217 100% 60%;
+  }
+
+  .dark {
+    --background: 240 10% 6%;
+    --foreground: 220 20% 90%;
+    --card: 240 10% 11%;
+    --card-foreground: 220 20% 90%;
+    --popover: 240 10% 11%;
+    --popover-foreground: 220 20% 90%;
+    --primary: 217 91% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 10% 15%;
+    --secondary-foreground: 220 20% 90%;
+    --muted: 240 10% 15%;
+    --muted-foreground: 220 15% 55%;
+    --accent: 45 96% 60%;
+    --accent-foreground: 240 10% 6%;
+    --destructive: 0 63% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 10% 18%;
+    --input: 240 10% 15%;
+    --ring: 217 91% 55%;
+    --chart-1: 217 91% 55%;
+    --chart-2: 45 96% 60%;
+    --chart-3: 217 70% 65%;
+    --chart-4: 45 80% 70%;
+    --chart-5: 217 100% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Smooth transitions */
+.transition-sidebar {
+  transition: width 0.3s ease, transform 0.3s ease;
+}
